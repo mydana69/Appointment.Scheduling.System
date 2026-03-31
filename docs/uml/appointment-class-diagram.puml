@@ -1,0 +1,88 @@
+@startuml
+skinparam classAttributeIconSize 0
+
+package "com.appointment.domain.model" {
+  class User {
+    -id: String
+    -name: String
+    +getId(): String
+    +getName(): String
+  }
+
+  class Administrator
+  User <|-- Administrator
+
+  class Appointment {
+    -id: String
+    -type: AppointmentType
+    -timeSlot: TimeSlot
+    -participants: int
+    -status: AppointmentStatus
+    +cancel(): void
+    +updateDetails(type, timeSlot, participants): void
+  }
+
+  class BookingRequest
+  class Schedule
+  class TimeSlot
+  class NotificationMessage
+
+  enum AppointmentType
+  enum AppointmentStatus
+
+  User "1" -- "*" Appointment
+  Appointment --> TimeSlot
+  Schedule "1" -- "*" TimeSlot
+}
+
+package "com.appointment.domain.strategy" {
+  interface BookingRuleStrategy {
+    +isValid(appointment): boolean
+    +getErrorMessage(): String
+  }
+  class DurationRuleStrategy
+  class ParticipantLimitRuleStrategy
+  class TypeSpecificRuleStrategy
+  BookingRuleStrategy <|.. DurationRuleStrategy
+  BookingRuleStrategy <|.. ParticipantLimitRuleStrategy
+  BookingRuleStrategy <|.. TypeSpecificRuleStrategy
+}
+
+package "com.appointment.domain.observer" {
+  interface AppointmentObserver {
+    +notify(user, message): void
+  }
+  class AppointmentEventPublisher {
+    +register(observer): void
+    +notifyAllObservers(user, message): void
+  }
+  class NotificationObserver
+  AppointmentObserver <|.. NotificationObserver
+  AppointmentEventPublisher "1" -- "*" AppointmentObserver
+}
+
+package "com.appointment.application" {
+  interface NotificationService
+  interface TimeProvider
+}
+
+package "com.appointment.persistence" {
+  interface AppointmentRepository
+  class InMemoryAppointmentRepository
+  AppointmentRepository <|.. InMemoryAppointmentRepository
+}
+
+package "com.appointment.application.service" {
+  class AdminAuthService
+  class AppointmentService
+}
+
+AppointmentService --> AppointmentRepository
+AppointmentService --> BookingRuleStrategy
+AppointmentService --> AppointmentEventPublisher
+AppointmentService --> TimeProvider
+AppointmentService --> AdminAuthService
+NotificationObserver --> NotificationService
+
+@enduml
+
